@@ -1,6 +1,6 @@
-import os
 from pathlib import Path
 from langchain_openai import ChatOpenAI, OpenAIEmbeddings
+from langchain_ollama import ChatOllama
 from langchain_chroma import Chroma
 from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_core.messages import SystemMessage, HumanMessage, convert_to_messages
@@ -12,8 +12,9 @@ from dotenv import load_dotenv
 load_dotenv(override=True)
 
 MODEL = "gpt-4.1-nano"
-GROQ_MODEL ="openai/gpt-oss-20b"
-OPENROUTER_MODEL ="deepseek/deepseek-v3.2"
+minimax = "minimax-m3:cloud";
+llama = "llama3.2:3b"
+phi3 = "phi3"
 DB_NAME = str(Path(__file__).parent.parent / "vector_db")
 
 embeddings = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
@@ -32,11 +33,7 @@ Context:
 vectorstore = Chroma(persist_directory=DB_NAME, embedding_function=embeddings)
 retriever = vectorstore.as_retriever()
 # llm = ChatOpenAI(temperature=0, model_name=MODEL)
-llm = ChatOpenAI(
-    api_key=os.getenv("GROQ_API_KEY"),
-    base_url="https://api.groq.com/openai/v1",
-    model="openai/gpt-oss-20b",
-)
+llm = ChatOllama(model=minimax,temperature=0)
 
 
 def fetch_context(question: str) -> list[Document]:

@@ -1,16 +1,25 @@
+import os
 import sys
 import math
 from pydantic import BaseModel, Field
 from litellm import completion
 from dotenv import load_dotenv
+from groq import Groq
 
 from evaluation.test import TestQuestion, load_tests
 from implementation.answer import answer_question, fetch_context
 
 
 load_dotenv(override=True)
+api_key = os.getenv('GROQ_API_KEY')
 
-MODEL = "gpt-4.1-nano"
+# MODEL = "gpt-4.1-nano"
+MODEL = "llama3.2:3b"
+
+groqcall = Groq()
+GROQ_MODEL ="openai/gpt-oss-20b"
+
+OPENROUTER_MODEL ="deepseek/deepseek-v3.2"
 db_name = "vector_db"
 
 
@@ -130,7 +139,20 @@ def evaluate_answer(test: TestQuestion) -> tuple[AnswerEval, str, list]:
     judge_messages = [
         {
             "role": "system",
-            "content": "You are an expert evaluator assessing the quality of answers. Evaluate the generated answer by comparing it to the reference answer. Only give 5/5 scores for perfect answers.",
+            # "content": "You are an expert evaluator assessing the quality of answers. Evaluate the generated answer by comparing it to the reference answer. Only give 5/5 scores for perfect answers.",
+             "content": """You are an expert evaluator.
+
+                Return ONLY valid JSON.
+
+                The JSON schema is:
+
+                {
+                "feedback": "string",
+                "accuracy": number,
+                "completeness": number,
+                "relevance": number
+                }
+                """
         },
         {
             "role": "user",
@@ -153,12 +175,17 @@ Provide detailed feedback and scores from 1 (very poor) to 5 (ideal) for each di
     ]
 
     # Call LLM judge with structured outputs (async)
-    judge_response = completion(model=MODEL, messages=judge_messages, response_format=AnswerEval)
+    # judge_response = completion(model=MODEL, messages=judge_messages, response_format=AnswerEval)
 
+    # answer_eval = AnswerEval.model_validate_json(judge_response.choices[0].message.content)
+
+    # return answer_eval, generated_answer, retrieved_docs
+    judge_response = groqcall.chat.completions.create(
+        model=GROQ_MODEL, messages=judge_messages, 
+        response_format={"type": "json_object"},
+    )
     answer_eval = AnswerEval.model_validate_json(judge_response.choices[0].message.content)
-
     return answer_eval, generated_answer, retrieved_docs
-
 
 def evaluate_all_retrieval():
     """Evaluate all retrieval tests."""

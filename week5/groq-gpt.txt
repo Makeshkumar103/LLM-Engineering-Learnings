@@ -1,0 +1,117 @@
+Groq : 0.33.0
+
+Great, that explains what's happening.
+
+Groq SDK: 0.33.0 ✅
+Pydantic: 2.13.4 ✅
+
+Your SDK is recent enough, but there is one important limitation:
+
+chat.completions.create() does not accept a Pydantic model as response_format. That's why your original ModelMetaclass is not JSON serializable error occurred.
+
+The next error:
+
+'messages' must contain the word 'json'
+
+is simply Groq enforcing JSON mode.
+
+The easiest solution
+
+Keep:
+
+response_format={"type": "json_object"}
+
+and modify your prompt.
+
+For example:
+
+judge_messages = [
+    {
+        "role": "system",
+        "content": """You are an expert evaluator.
+
+Return ONLY valid JSON.
+
+The JSON schema is:
+
+{
+  "feedback": "string",
+  "accuracy": number,
+  "completeness": number,
+  "relevance": number
+}
+"""
+    },
+    {
+        "role": "user",
+        "content": f"""
+Question:
+{test.question}
+
+Generated Answer:
+{generated_answer}
+
+Reference Answer:
+{test.reference_answer}
+
+Evaluate the answer.
+
+Return the result as JSON only.
+"""
+    }
+]
+
+Then:
+
+judge_response = groqcall.chat.completions.create(
+    model=GROQ_MODEL,
+    messages=judge_messages,
+    response_format={"type": "json_object"},
+)
+
+answer_eval = AnswerEval.model_validate_json(
+    judge_response.choices[0].message.content
+)
+An even better approach: use Groq's parse() API
+
+Groq 0.33.0 supports structured outputs similar to OpenAI.
+
+Instead of
+
+groqcall.chat.completions.create(...)
+
+check whether this works:
+
+completion = groqcall.beta.chat.completions.parse(
+    model=GROQ_MODEL,
+    messages=judge_messages,
+    response_format=AnswerEval,
+)
+
+answer_eval = completion.choices[0].message.parsed
+
+If groqcall.beta exists, this is the cleanest solution because you don't have to manually parse JSON.
+
+Run this once:
+
+print(hasattr(groqcall, "beta"))
+
+If it prints
+
+True
+
+then you should switch to beta.chat.completions.parse().
+
+If it prints
+
+False
+
+then your installed SDK doesn't expose that API, and the json_object approach above is the correct one.
+
+One last question
+
+What is the output of:
+
+print(hasattr(groqcall, "beta"))
+
+That will tell us whether you can use native Pydantic parsing or should stick with JSON mode.

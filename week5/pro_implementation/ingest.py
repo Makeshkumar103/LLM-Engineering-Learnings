@@ -11,7 +11,7 @@ from tenacity import retry, wait_exponential
 
 load_dotenv(override=True)
 
-MODEL = "openai/gpt-4.1-nano"
+MODEL = "openai/gpt-oss-20b"
 
 DB_NAME = str(Path(__file__).parent.parent / "preprocessed_db")
 collection_name = "docs"
@@ -24,7 +24,10 @@ wait = wait_exponential(multiplier=1, min=10, max=240)
 WORKERS = 3
 
 openai = OpenAI()
-
+openrouter = OpenAI(
+    api_key=openrouter_api_key,
+    base_url="https://openrouter.ai/api/v1"
+) 
 
 class Result(BaseModel):
     page_content: str
@@ -99,6 +102,8 @@ def make_messages(document):
         {"role": "user", "content": make_prompt(document)},
     ]
 
+import litellm
+litellm._turn_on_debug()
 
 @retry(wait=wait)
 def process_document(document):

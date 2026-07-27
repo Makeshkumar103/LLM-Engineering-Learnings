@@ -10,8 +10,8 @@ pushover_url = "https://api.pushover.net/1/messages.json"
 class MessagingAgent(Agent):
     name = "Messaging Agent"
     color = Agent.WHITE
-    MODEL = "claude-sonnet-4-5"
-
+    # MODEL = "claude-sonnet-4-5"
+    MODEL = "openai/gpt-oss-20b"
     def __init__(self):
         """
         Set up this object to either do push notifications via Pushover,

@@ -5,13 +5,15 @@ from agents.scanner_agent import ScannerAgent
 from agents.ensemble_agent import EnsembleAgent
 from agents.messaging_agent import MessagingAgent
 from openai import OpenAI
+from groq import Groq
 import json
 
 
 class AutonomousPlanningAgent(Agent):
     name = "Autonomous Planning Agent"
     color = Agent.GREEN
-    MODEL = "gpt-5.1"
+    # MODEL = "gpt-5.1"
+    MODEL = "openai/gpt-oss-20b"
 
     def __init__(self, collection):
         """
@@ -21,7 +23,8 @@ class AutonomousPlanningAgent(Agent):
         self.scanner = ScannerAgent()
         self.ensemble = EnsembleAgent(collection)
         self.messenger = MessagingAgent()
-        self.openai = OpenAI()
+        # self.openai = OpenAI()
+        self.groq = Groq()
         self.memory = None
         self.opportunity = None
         self.log("Autonomous Planning Agent is ready")
@@ -166,7 +169,9 @@ class AutonomousPlanningAgent(Agent):
         messages = self.messages[:]
         done = False
         while not done:
-            response = self.openai.chat.completions.create(
+            # response = self.openai.chat.completions.create(
+            response = self.groq.chat.completions.create(
+            
                 model=self.MODEL, messages=messages, tools=self.get_tools()
             )
             if response.choices[0].finish_reason == "tool_calls":

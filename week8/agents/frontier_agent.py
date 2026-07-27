@@ -1,6 +1,7 @@
 import re
 from typing import List, Dict
 from openai import OpenAI
+from groq import Groq
 from sentence_transformers import SentenceTransformer
 from agents.agent import Agent
 
@@ -9,7 +10,8 @@ class FrontierAgent(Agent):
     name = "Frontier Agent"
     color = Agent.BLUE
 
-    MODEL = "gpt-4o-mini"
+    # MODEL = "gpt-4o-mini"
+    MODEL = "openai/gpt-oss-20b"
 
     def __init__(self, collection):
         """
@@ -17,8 +19,10 @@ class FrontierAgent(Agent):
         And setting up the vector encoding model
         """
         self.log("Initializing Frontier Agent")
-        self.client = OpenAI()
-        self.MODEL = "gpt-5.1"
+        # self.client = OpenAI()
+        self.client = Groq()
+        self.MODEL = ""
+        # self.MODEL = "gpt-5.1"
         self.log("Frontier Agent is setting up with OpenAI")
         self.collection = collection
         self.model = SentenceTransformer("sentence-transformers/all-MiniLM-L6-v2")

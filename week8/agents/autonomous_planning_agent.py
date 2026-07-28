@@ -169,7 +169,7 @@ class AutonomousPlanningAgent(Agent):
         messages = self.messages[:]
         done = False
         while not done:
-            # response = self.openai.chat.completions.create(
+            # response = self.openai.chat.completions.create( 
             response = self.groq.chat.completions.create(
             
                 model=self.MODEL, messages=messages, tools=self.get_tools()
